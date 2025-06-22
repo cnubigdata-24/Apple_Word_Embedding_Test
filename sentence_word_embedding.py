@@ -1,29 +1,61 @@
-#pip install sentence-transformers
-
-# Import required libraries
-from sentence_transformers import SentenceTransformer
+from transformers import BertTokenizer, BertModel
 from sklearn.metrics.pairwise import cosine_similarity
+import torch
 import numpy as np
 
-# Load a pre-trained BERT model (Sentence-BERT)
-model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
+tokenizer = BertTokenizer.from_pretrained("bert-base-uncased")
+model = BertModel.from_pretrained("bert-base-uncased")
 
-# Define two sentences for comparison
-sentence_1 = "I ate an apple."
-sentence_2 = "Apple Inc. is a technology company."
+sentence1 = "I ate an apple for breakfast."
+sentence2 = "Apple released a new product yesterday."
 
-# Generate 768-dimensional sentence embeddings
-embedding_1 = model.encode(sentence_1)
-embedding_2 = model.encode(sentence_2)
+# Get sentence embedding ([CLS])
+def get_sentence_embedding(sentence):
+    inputs = tokenizer(sentence, return_tensors="pt")
+    with torch.no_grad():
+        outputs = model(**inputs)
+        return outputs.last_hidden_state[0][0].numpy()
 
-# Compute cosine similarity between the two embeddings
-cosine_sim = cosine_similarity([embedding_1], [embedding_2])[0][0]
+# Get word embedding
+def get_word_embedding(sentence, target_word):
+    inputs = tokenizer(sentence, return_tensors="pt")
+    with torch.no_grad():
+        outputs = model(**inputs)
+        tokens = tokenizer.convert_ids_to_tokens(inputs['input_ids'][0])
+        embeddings = outputs.last_hidden_state[0]
+        for i, token in enumerate(tokens):
+            if target_word.lower() in token.lower():
+                return embeddings[i].numpy(), tokens
+        raise ValueError(f"'{target_word}' not found in tokens: {tokens}")
 
-# Print results
-print("Sentence 1:", sentence_1)
-print("Sentence 2:", sentence_2)
+sentence_emb_1 = get_sentence_embedding(sentence1)
+sentence_emb_2 = get_sentence_embedding(sentence2)
 
-# Print first 10 values
-print("\nEmbedding 1 (first 10 dimensions):", embedding_1[:10])  
-print("Embedding 2 (first 10 dimensions):", embedding_2[:10]) 
-print("\nCosine Similarity:", cosine_sim)
+apple_emb_1, tokens_1 = get_word_embedding(sentence1, "apple")
+apple_emb_2, tokens_2 = get_word_embedding(sentence2, "apple")
+
+# Cosine similarity
+sentence_sim = cosine_similarity([sentence_emb_1], [sentence_emb_2])[0][0]
+apple_sim = cosine_similarity([apple_emb_1], [apple_emb_2])[0][0]
+
+np.set_printoptions(precision=4, suppress=True)
+
+def short_embed(embed, n=7):
+    head = np.round(embed[:n], 4)
+    return f"[{' '.join(map(str, head))} ...]"
+
+print("Sentence 1\n---------------------------")
+print(f"Sentence: {sentence1}")
+print(f"Token: {tokens_1}")
+print(f"문장 임베딩 (총 {len(sentence_emb_1)}차원): {short_embed(sentence_emb_1)}")
+print(f"apple 임베딩 (총 {len(apple_emb_1)}차원): {short_embed(apple_emb_1)}")
+
+print("\nSentence 2\n---------------------------")
+print(f"Sentence: {sentence2}")
+print(f"Token: {tokens_2}")
+print(f"문장 임베딩 (총 {len(sentence_emb_2)}차원): {short_embed(sentence_emb_2)}")
+print(f"apple 임베딩 (총 {len(apple_emb_2)}차원): {short_embed(apple_emb_2)}")
+
+print("\nCosine similarity\n---------------------------")
+print(f"Similarity between sentences: {round(sentence_sim, 4)}")
+print(f"Apple similarity : {round(apple_sim, 4)}")
