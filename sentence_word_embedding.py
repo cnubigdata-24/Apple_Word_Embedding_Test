@@ -1,3 +1,5 @@
+# pip install sentence-transformers
+
 from transformers import BertTokenizer, BertModel
 from sklearn.metrics.pairwise import cosine_similarity
 import torch
