@@ -20,10 +20,12 @@ def get_sbert_embedding(sentence):
 # Get word embedding from BERT
 def get_word_embedding(sentence, target_word):
     inputs = tokenizer(sentence, return_tensors="pt")
+    
     with torch.no_grad():
         outputs = bert_model(**inputs)
         tokens = tokenizer.convert_ids_to_tokens(inputs['input_ids'][0])
         embeddings = outputs.last_hidden_state[0]
+        
         for i, token in enumerate(tokens):
             if target_word.lower() in token.lower():
                 return embeddings[i].numpy(), tokens
@@ -103,6 +105,7 @@ for sent in sentences:
 # Similarity matrix
 print("Apple word similarity matrix:")
 print("-" * 50)
+
 for i in range(len(embeddings)):
     for j in range(len(embeddings)):
         sim = cosine_similarity([embeddings[i]], [embeddings[j]])[0][0]
@@ -113,4 +116,3 @@ print("\nAnalysis:")
 print("- Sentence 1 vs 3: Both mean 'fruit' -> Expected high similarity")
 print("- Sentence 2 vs 4: Both mean 'company' -> Expected high similarity")
 print("- Sentence 1 vs 2: 'fruit' vs 'company' -> Expected low similarity")
-
