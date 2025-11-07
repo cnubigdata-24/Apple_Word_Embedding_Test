@@ -1,5 +1,7 @@
 # pip install sentence-transformers
 
+print("Example 1 ###############################################\n")
+
 from sentence_transformers import SentenceTransformer
 from transformers import BertTokenizer, BertModel
 from sklearn.metrics.pairwise import cosine_similarity
@@ -63,7 +65,7 @@ print("\nCosine similarity\n---------------------------")
 print(f"Similarity between sentences: {round(sbert_sim, 4)}")
 print(f"Apple similarity: {round(apple_sim, 4)}")
 
-###################################################################################################
+print("\nExample 2 ###############################################\n")
 
 from transformers import BertTokenizer, BertModel
 from sklearn.metrics.pairwise import cosine_similarity
@@ -109,7 +111,7 @@ print("-" * 50)
 for i in range(len(embeddings)):
     for j in range(len(embeddings)):
         sim = cosine_similarity([embeddings[i]], [embeddings[j]])[0][0]
-        print(f"Sentence {i+1} vs {j+1}: {round(sim, 4)}", end="  ")
+        print(f"Sentence {i+1} vs {j+1}: {round(sim, 4)}", end=" / ")
     print()
 
 print("\nAnalysis:")
